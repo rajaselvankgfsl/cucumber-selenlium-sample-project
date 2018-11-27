@@ -1,0 +1,229 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com</groupId>
+  <artifactId>SampleProject</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>SampleProject</name>
+  	<dependencies>
+
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-java</artifactId>
+			<version>1.2.4</version>
+		</dependency>
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-junit</artifactId>
+			<version>1.2.4</version>
+		</dependency>
+		  
+             <dependency>
+              <groupId>com.github.mkolisnyk</groupId>
+              <artifactId>cucumber-reports</artifactId>
+              <version>0.0.5</version>
+            </dependency>
+          
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-jvm-deps</artifactId>
+			<version>1.0.5</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-testng</artifactId>
+			<version>1.2.4</version>
+			<scope>compile</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>6.9.8</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
+			<version>3.14.0</version>
+		</dependency>
+		<dependency>
+			<groupId>net.masterthought</groupId>
+			<artifactId>cucumber-reporting</artifactId>
+			<version>0.2.1</version>
+		</dependency>
+		<dependency>
+			<artifactId>guava</artifactId>
+			<groupId>com.google.guava</groupId>
+			<type>jar</type>
+			<version>23.0</version>
+		</dependency>
+
+
+
+		<dependency>
+			<groupId>com.oracle</groupId>
+			<artifactId>ojdbc7</artifactId>
+			<version>12.1.0.2</version>
+		</dependency>
+
+
+
+		<dependency>
+			<groupId>org.jdbi</groupId>
+			<artifactId>jdbi</artifactId>
+			<version>2.55</version>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.32</version>
+		</dependency>
+
+
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>fontbox</artifactId>
+			<version>1.8.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-configuration</groupId>
+			<artifactId>commons-configuration</artifactId>
+			<version>1.6</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jasypt</groupId>
+			<artifactId>jasypt</artifactId>
+			<version>1.9.0</version>
+		</dependency>
+
+
+	</dependencies>
+	<build>
+	
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				  <version>2.20</version>
+				<configuration>
+					<testFailureIgnore>true</testFailureIgnore>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>net.masterthought</groupId>
+				<artifactId>maven-cucumber-reporting</artifactId>
+				<version>3.8.0</version>
+				<executions>
+					<execution>
+						<id>execution</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<projectName>RHB</projectName>
+							<buildNumber>${build.number}</buildNumber>
+							<outputDirectory>${project.build.directory}/cucumber-html-reports</outputDirectory>
+							<cucumberOutput>${project.build.directory}/cucumber.json</cucumberOutput>
+							<enableFlashCharts>false</enableFlashCharts>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<profiles>
+		<profile>
+			<id>integration-tests</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-failsafe-plugin</artifactId>
+						<configuration>
+							<parallel>none</parallel>
+							<threadCount>1</threadCount>
+							<disableXmlReport>true</disableXmlReport>
+						</configuration>
+						<executions>
+							<execution>
+								<id>Runnerclass</id>
+								<phase>integration-test</phase>
+								<goals>
+									<goal>integration-test</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					
+					<!-- Post-Man plugin -->
+         <plugin>
+            <groupId>ch.fortysix</groupId>
+            <artifactId>maven-postman-plugin</artifactId>
+            <version>0.1.6</version>
+                <executions>
+                   <execution>
+                       <id>Report Generation</id>
+                       <phase>test</phase>
+                       <goals>
+                           <goal>send-mail</goal>
+                       </goals>
+                       <inherited>true</inherited>
+                       <configuration>
+                          <!-- From Email address -->
+                          <from>rajaselvan.d@kggroup.com</from>
+                          <!-- Email subject -->
+                          <subject>Cucumber Test Automation Report</subject>
+                          <!-- Fail the build if the mail doesn't reach -->
+                          <failonerror>true</failonerror>
+                          <!-- Email Body Content -->
+                          <htmlMessage>
+                                    <![CDATA[
+                                    <p>New test build triggered!</p>
+                                    <p>Attached html file contains the test result status</p> 
+                                    ]]>
+                          </htmlMessage>
+                          <!-- host -->
+                          <mailhost>10.100.1.123</mailhost>
+                          <!-- port of the host -->
+                          <mailport>25</mailport>
+                          <mailssl>true</mailssl>
+                          <mailAltConfig>true</mailAltConfig>
+                          <!-- Email Authentication(Username and Password) -->
+                          <mailuser>rajaselvan.d@kggroup.com</mailuser>
+                          <mailpassword>Kgisl@123</mailpassword>
+                          <receivers>
+                               <!-- To Email address -->
+                               <receiver>rajaselvan.d@kggroup.com</receiver>
+                               <receiver>rajaselvan.d@kggroup.com</receiver>
+                          </receivers>
+                          <fileSets>
+                             <fileSet>
+                                  <!-- Report directory Path -->
+                                  <directory>${basedir}/target</directory>
+                                       <includes>
+                                          <!-- Report file name -->
+                                          <include>cucumber-test-results.html</include>
+                                       </includes>
+                             </fileSet>
+                          </fileSets>
+                       </configuration>
+                   </execution>
+                </executions>
+         </plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+  
+</project>
