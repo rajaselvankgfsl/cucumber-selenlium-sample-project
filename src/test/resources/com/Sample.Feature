@@ -1,5 +1,5 @@
 @Motor @Agent @Ilive
-Feature: Title of your feature
+Feature: SampleCucumberProject
   I want to use this template for my feature file
 
   @Regression777
