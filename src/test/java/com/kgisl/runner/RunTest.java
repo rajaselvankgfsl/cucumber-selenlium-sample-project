@@ -12,7 +12,7 @@ import cucumber.api.testng.TestNGCucumberRunner;
 			features =  ".",
 	        glue = "com.kgisl.stepDefinitions",
 	        //tags = "@Environment2,@Environment1,@Environment4",
-	    	 tags = {"@Agent","@Regression777","@Motor",},
+	    	 tags = {"@Agent12","@Regression777","@Motor",},
 
 	        monochrome = true,
 	        plugin = {"pretty","html:target/html","json:target/cucumber.json", "rerun:rerun.txt"})
