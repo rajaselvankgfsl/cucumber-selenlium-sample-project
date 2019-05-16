@@ -1,5 +1,16 @@
 package com.kgisl.library;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -10,7 +21,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -18,30 +32,25 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.pdfbox.cos.COSDocument;
+import org.apache.pdfbox.pdfparser.PDFParser;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.util.PDFTextStripper;
 import org.junit.Assert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
 import com.kgisl.baseclass.BaseClass;
 import com.kgisl.pageElements.HomePage;
 import com.kgisl.pageElements.LoginPage;
 
-import cucumber.api.java.en.Given;
-
-import java.io.File;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import org.openqa.selenium.interactions.Actions;
 
 public class LibraryClass extends BaseClass {
 
@@ -58,33 +67,66 @@ public class LibraryClass extends BaseClass {
 	public By flexiGuideOptionPopup = By.cssSelector("div[id='FLXOPTION'] div[class='modal-dialog modal-lg']");
 	public By ok_Popup = By.xpath(".//*[@id='popup_ok']");
 	public By ok_PopupMessage = By.id("popup_message");
+
 	LoginPage loginPage = LoginPage.getInstance();
 	HomePage homePage = HomePage.getInstance();
 	public int noOfRow;
 	public static String expectedValue;
+	private static final String CHAR_LIST = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	private static final int RANDOM_STRING_LENGTH = 3;
+	boolean flag;
 
 	public void agentLogin() throws Exception {
 		waitForInVisibilityOfElement(driver, loadingImg, 30);
 
 		try {
-			waitForVisibilityOfElement(driver, homePage.popUpOk_ButtonElement,10);
+			// waitForVisibilityOfElement(driver,
+			// homePage.popUpOk_ButtonElement,10);
 			if (driver.findElement(homePage.popUpOk_ButtonElement).isDisplayed())
 				driver.findElement(homePage.popUpOk_ButtonElement).click();
 		} catch (Exception e) {
 		}
-		
+
 		waitForInVisibilityOfElement(driver, loadingImg, 30);
 		WebElement userNameEditBox = driver.findElement(loginPage.userName_TextBoxElement);
 		// userNameEditBox.sendKeys("50193"); for first time
 		userNameEditBox.sendKeys(agentUserName);
-		//userNameEditBox.sendKeys("AUTOAMTION_TEST");
+		// userNameEditBox.sendKeys("AUTOAMTION_TEST");
+
+		WebElement passwordEditBox = driver.findElement(loginPage.password_TextBoxElement);
+		passwordEditBox.sendKeys(agentPassword);
+
+		Thread.sleep(500);
+		waitForVisibilityOfElement(driver, loginPage.signInAgent_ButtonElement, 10);
+		WebElement signInButton = driver.findElement(loginPage.signInAgent_ButtonElement);
+		signInButton.click();
+
+		waitForInVisibilityOfElement(driver, loginPage.pageBlocker, 40);
+	}
+
+	public void agentLogin(String agentUserName, String agentPassword) throws Exception {
+		waitForInVisibilityOfElement(driver, loadingImg, 30);
+
+		try {
+			// waitForVisibilityOfElement(driver,
+			// homePage.popUpOk_ButtonElement,10);
+			if (driver.findElement(homePage.popUpOk_ButtonElement).isDisplayed())
+				driver.findElement(homePage.popUpOk_ButtonElement).click();
+		} catch (Exception e) {
+		}
+
+		waitForInVisibilityOfElement(driver, loadingImg, 30);
+		WebElement userNameEditBox = driver.findElement(loginPage.userName_TextBoxElement);
+		// userNameEditBox.sendKeys("50193"); for first time
+		userNameEditBox.sendKeys(agentUserName);
+		// userNameEditBox.sendKeys("AUTOAMTION_TEST");
 
 		WebElement passwordEditBox = driver.findElement(loginPage.password_TextBoxElement);
 		passwordEditBox.sendKeys(agentPassword);
 
 		Thread.sleep(500);
 
-		WebElement signInButton = driver.findElement(loginPage.signIn_ButtonElement);
+		WebElement signInButton = driver.findElement(loginPage.signInAgent_ButtonElement);
 		signInButton.click();
 
 		waitForInVisibilityOfElement(driver, loginPage.pageBlocker, 40);
@@ -116,9 +158,41 @@ public class LibraryClass extends BaseClass {
 		WebElement signInButton = driver.findElement(loginPage.signInAdmin_ButtonElement);
 		signInButton.click();
 
+		waitForInVisibilityOfElement(driver, loadingImg, 60);
+
+		try {
+			if (driver.findElement(homePage.popUpCancel_ButtonElement).isDisplayed())
+				driver.findElement(homePage.popUpCancel_ButtonElement).click();
+		} catch (Exception e) {
+		}
+
+	}
+
+	public void adminLogin(String adminUserID, String adminPassword) throws Exception {
 		waitForInVisibilityOfElement(driver, loadingImg, 30);
-		
-		
+		Thread.sleep(500);
+		try {
+			if (driver.findElement(homePage.popUpOk_ButtonElement).isDisplayed())
+				driver.findElement(homePage.popUpOk_ButtonElement).click();
+		} catch (Exception e) {
+		}
+
+		waitForInVisibilityOfElement(driver, loadingImg, 30);
+
+		WebElement userNameEditBox = driver.findElement(loginPage.userName_TextBoxElement);
+		// userNameEditBox.sendKeys("S001"); for new envi
+		userNameEditBox.sendKeys(adminUserID);
+
+		WebElement passwordEditBox = driver.findElement(loginPage.password_TextBoxElement);
+		// passwordEditBox.sendKeys("Bausqa@123"); for new envi
+		passwordEditBox.sendKeys(adminPassword);
+
+		Thread.sleep(500);
+		WebElement signInButton = driver.findElement(loginPage.signInAdmin_ButtonElement);
+		signInButton.click();
+
+		waitForInVisibilityOfElement(driver, loadingImg, 30);
+
 		try {
 			if (driver.findElement(homePage.popUpCancel_ButtonElement).isDisplayed())
 				driver.findElement(homePage.popUpCancel_ButtonElement).click();
@@ -153,9 +227,6 @@ public class LibraryClass extends BaseClass {
 	/*
 	 * navigate to admin client profile page
 	 */
-	public void navigateToAgentClientProfilePage() throws Exception {
-		driver.navigate().to(agentClientProfileUrl);
-	}
 
 	public String todaysDate() {
 		Date todays = new Date();
@@ -177,7 +248,7 @@ public class LibraryClass extends BaseClass {
 		List<WebElement> tblRows = table.findElements(By.cssSelector(
 				"div[class='ui-grid-render-container ng-isolate-scope ui-grid-render-container-body'] div[class='ui-grid-row ng-scope']"));
 		int tblRowscount = tblRows.size();
-		/*System.out.println("row size " +tblRowscount);*/
+		/* System.out.println("row size " +tblRowscount); */
 
 		for (row = 0; row < tblRowscount; row++) {
 
@@ -193,11 +264,13 @@ public class LibraryClass extends BaseClass {
 			Set<Integer> keys = givenTableValue.keySet();
 			for (Integer key : keys) {
 
-			/*	System.out.println("TableValue of " + key + " is: " + actualTblData.get(key).getText());*/
+				// System.out.println("TableValue of " + key + " is: " +
+				// actualTblData.get(key).getText());
 
 				givenValueInGrid = givenTableValue.get(key);
 
-			/*	System.out.println("Given of " + key + " is: " + givenValueInGrid);*/
+				// System.out.println("Given of " + key + " is: " +
+				// givenValueInGrid);
 
 				if (actualTblData.get(key) != null
 						&& !givenTableValue.get(key).equals(actualTblData.get(key).getText())) {
@@ -207,6 +280,7 @@ public class LibraryClass extends BaseClass {
 			} // For Key Loop End
 
 			if (matchFound == true) {
+				waitForInVisibilityOfElement(driver, loginPage.pageBlocker, 60);
 				Assert.assertTrue("The records have shown properly", matchFound);
 				noOfRow = row;
 				rownumber = tblRows.get(row);
@@ -218,7 +292,7 @@ public class LibraryClass extends BaseClass {
 		} // Main For End
 		if (matchFound == false) {
 			givenTableValue.clear();
-			Assert.fail("Not able to find the value in the grid " + givenValueInGrid);
+			Assert.fail("Not able to find the value in the grid " + givenTableValue);
 			table.click();
 		}
 		givenTableValue.clear();
@@ -288,6 +362,7 @@ public class LibraryClass extends BaseClass {
 		action.doubleClick(rownumber).build().perform();
 
 		try {
+
 			action.moveToElement(rownumber).click();
 			rownumber.click();
 			rownumber.click();
@@ -295,6 +370,7 @@ public class LibraryClass extends BaseClass {
 
 		}
 		try {
+
 			action.doubleClick(rownumber).build().perform();
 		} catch (Exception e) {
 
@@ -388,8 +464,7 @@ public class LibraryClass extends BaseClass {
 		}
 
 		catch (Exception e) {
-			/*WebElement viewAgentClose_Btn = driver.findElement(FlexiGuide.viewAgentClose_Btn);
-			viewAgentClose_Btn.click();*/
+			System.out.println(e);
 		}
 	}
 
@@ -410,7 +485,7 @@ public class LibraryClass extends BaseClass {
 	}
 
 	public void waitForClickableElement(WebDriver driver, By clickableElement, int secondsToWait) {
-		WebDriverWait wait = new WebDriverWait(driver, 15);
+		WebDriverWait wait = new WebDriverWait(driver, secondsToWait);
 		wait.until(ExpectedConditions.elementToBeClickable(clickableElement));
 
 	}
@@ -424,7 +499,11 @@ public class LibraryClass extends BaseClass {
 	public void waitForVisibilityOfElement(WebDriver driver, By visbleElement) {
 		WebDriverWait wait = new WebDriverWait(driver, 35);
 		wait.until(ExpectedConditions.visibilityOfElementLocated(visbleElement));
+	}
 
+	public void waitForElementToBeSelected(WebDriver driver, By visbleElement) {
+		WebDriverWait wait = new WebDriverWait(driver, 35);
+		wait.until(ExpectedConditions.elementToBeSelected(visbleElement));
 	}
 
 	public void waitForVisibilityOfElement(WebDriver driver, WebElement element) {
@@ -434,24 +513,31 @@ public class LibraryClass extends BaseClass {
 	}
 
 	public void waitForWindowSizeEqualsInput(WebDriver driver, int windowSize) {
-		WebDriverWait wait = new WebDriverWait(driver, 15);
+		WebDriverWait wait = new WebDriverWait(driver, 20);
 		wait.until(ExpectedConditions.numberOfWindowsToBe(windowSize));
 
 	}
+
 	public void waitForWindowSizeEqualsInput(WebDriver driver, int windowSize, int seconds) {
 		WebDriverWait wait = new WebDriverWait(driver, seconds);
 		wait.until(ExpectedConditions.numberOfWindowsToBe(windowSize));
 
 	}
 
+	public void waitForPresenceOfElementLocated(WebDriver driver, By clickableElement) {
+		WebDriverWait wait = new WebDriverWait(driver, 60);
+		wait.until(ExpectedConditions.presenceOfElementLocated(clickableElement));
+
+	}
+
 	public void waitForClickableElement(WebDriver driver, By clickableElement) {
-		WebDriverWait wait = new WebDriverWait(driver, 15);
+		WebDriverWait wait = new WebDriverWait(driver, 30);
 		wait.until(ExpectedConditions.elementToBeClickable(clickableElement));
 
 	}
 
 	public void waitForClickableElement(WebDriver driver, WebElement element) {
-		WebDriverWait wait = new WebDriverWait(driver, 15);
+		WebDriverWait wait = new WebDriverWait(driver, 30);
 		wait.until(ExpectedConditions.elementToBeClickable(element));
 
 	}
@@ -463,41 +549,42 @@ public class LibraryClass extends BaseClass {
 	}
 
 	public void dropDownSelection(WebElement dropDownWebElement, String optionToBeSelected) {
-
+		waitForInVisibilityOfElement(driver, By.id("page-blocker"), 300);
 		Select select = new Select(dropDownWebElement);
 		select.selectByVisibleText(optionToBeSelected);
-
 	}
 
 	public void acceptPopUp() {
-		waitForClickableElement(driver, homePage.popUpOk_ButtonElement);
-		driver.findElement(homePage.popUpOk_ButtonElement).click();
-
+		try {
+			waitForClickableElement(driver, homePage.popUpOk_ButtonElement);
+			driver.findElement(homePage.popUpOk_ButtonElement).click();
+		} catch (Exception e) {
+			((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);",
+					driver.findElement(homePage.popUpOk_ButtonElement));
+		}
 	}
 
-	public String DBVerification(String sqlQuery, String ColumnToGet) throws SQLException
-	{
+	public String DBVerification(String sqlQuery, String ColumnToGet) throws SQLException {
 		expectedValue = null;
 		ResultSet resultSet = null;
+		// System.out.println(sqlQuery);
 		resultSet = st.executeQuery(sqlQuery);
-		
-		while (resultSet.next()) 
-		{
-			    expectedValue = resultSet.getString(ColumnToGet);	
+
+		while (resultSet.next()) {
+			expectedValue = resultSet.getString(ColumnToGet);
 		}
 		return expectedValue;
-		
+
 	}
-	
+
 	/*
 	 * Generate random number
 	 */
-	public String generateRandomNumbers(int count)
-	{
-		 SecureRandom random = new SecureRandom();
-	     int num = random.nextInt(count);
-	     String number = String.format("%05d", num);
-	     return number;
+	public String generateRandomNumbers(int count) {
+		SecureRandom random = new SecureRandom();
+		int num = random.nextInt(count);
+		String number = String.format("%05d", num);
+		return number;
 	}
 
 	private void handleMultipleWindows(String currentURL) {
@@ -639,9 +726,44 @@ public class LibraryClass extends BaseClass {
 		return destDate;
 
 	}
-	
-	
-	public String incrementADateByOneday(int daysIncreaseCount,String givenDate) throws ParseException {
+
+	public boolean calculateleapyear() {
+
+		boolean chkleapyear;
+		Calendar cal = Calendar.getInstance();
+		Date today = cal.getTime();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy");
+		cal.add(Calendar.YEAR, 1);
+		String nextyear = sdf.format(cal.getTime());
+
+		// System.out.println(nextyear);
+		if ((Integer.parseInt(nextyear) / 4) == 0) {
+
+			chkleapyear = false;
+		} else {
+			chkleapyear = true;
+		}
+
+		return chkleapyear;
+
+	}
+
+	public String incrementADateByOneday(String daysIncreaseCunt) throws ParseException {
+
+		int daysIncreaseCount = Integer.parseInt(daysIncreaseCunt);
+		String sourceDate = todaysDate(); // Start date
+		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(sdf.parse(sourceDate)); // parsed date and setting to
+													// calendar
+		calendar.add(Calendar.DATE, daysIncreaseCount); // number of days to add
+		String destDate = sdf.format(calendar.getTime());
+
+		return destDate;
+
+	}
+
+	public String incrementADateByOneday(int daysIncreaseCount, String givenDate) throws ParseException {
 
 		String sourceDate = givenDate; // Start date
 		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
@@ -654,8 +776,11 @@ public class LibraryClass extends BaseClass {
 		return destDate;
 
 	}
-	
+
 	public static double convertToDoubleAndRoundOff(String toConvert) throws ParseException {
+		if (toConvert == null) {
+			toConvert = "0.00";
+		}
 		NumberFormat nf1 = NumberFormat.getInstance();
 		DecimalFormat df = new DecimalFormat("0.00");
 		Number numberValue = nf1.parse(toConvert);
@@ -665,30 +790,52 @@ public class LibraryClass extends BaseClass {
 		String formate = df.format(roundOff);
 		// double finalValue = (Double)df.parse(formate) ;
 		double finalValue = Double.parseDouble(formate);
+
 		return finalValue;
+	}
+
+	public static BigDecimal convertToDoubleAndRoundOff1(String toConvert) throws ParseException {
+
+		NumberFormat nf1 = NumberFormat.getInstance();
+		DecimalFormat df = new DecimalFormat("0.00");
+		Number numberValue = nf1.parse(toConvert);
+		Double doubleValue = numberValue.doubleValue();
+		double roundOff = (double) Math.round(doubleValue * 100.00) / 100.00;
+
+		String formate = df.format(roundOff);
+
+		BigDecimal bd = new BigDecimal(formate);
+		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP);
+		// double finalValue = (Double)df.parse(formate) ;
+		double finalValue = Double.parseDouble(formate);
+		return bd;
+	}
+
+	public int covertToInteger(String convertionString) {
+
+		int convertIntValue = Integer.parseInt(convertionString);
+		return convertIntValue;
 	}
 
 	/*
 	 * Get first selected option in dropdown
 	 */
-	public String getFirstSelectedOptionInDropDown(WebElement element)
-	{
+	public String getFirstSelectedOptionInDropDown(WebElement element) {
 		Select select = new Select(element);
 		String firstSelectedOption = select.getFirstSelectedOption().getText();
 		return firstSelectedOption;
 	}
-	
+
 	/*
 	 * Calculate days between two dates
 	 */
-	 public static long daysBetween(Date one, Date two) {
-	        long difference =  (one.getTime()-two.getTime())/86400000;
-	        return Math.abs(difference+1);
-	    }
+	public static long daysBetween(Date one, Date two) {
+		long difference = (one.getTime() - two.getTime()) / 86400000;
+		return Math.abs(difference + 1);
+	}
 
-	
 	public void verifyValueingrid(WebDriver driver, int mintblcolum, WebElement gridID,
-			HashMap<Integer, String> givenTableValue,int colNumber) {
+			HashMap<Integer, String> givenTableValue, int colNumber) {
 
 		boolean matchFound = false;
 
@@ -698,7 +845,7 @@ public class LibraryClass extends BaseClass {
 		List<WebElement> tblRows = table.findElements(By.cssSelector(
 				"div[class='ui-grid-render-container ng-isolate-scope ui-grid-render-container-body'] div[class='ui-grid-row ng-scope']"));
 		int tblRowscount = tblRows.size();
-		/*System.out.println("row size " +tblRowscount);*/
+		/* System.out.println("row size " +tblRowscount); */
 
 		for (row = 0; row < tblRowscount; row++) {
 
@@ -714,11 +861,17 @@ public class LibraryClass extends BaseClass {
 			Set<Integer> keys = givenTableValue.keySet();
 			for (Integer key : keys) {
 
-			/*	System.out.println("TableValue of " + key + " is: " + actualTblData.get(key).getText());*/
+				/*
+				 * System.out.println("TableValue of " + key + " is: " +
+				 * actualTblData.get(key).getText());
+				 */
 
 				givenValueInGrid = givenTableValue.get(key);
 
-			/*	System.out.println("Given of " + key + " is: " + givenValueInGrid);*/
+				/*
+				 * System.out.println("Given of " + key + " is: " +
+				 * givenValueInGrid);
+				 */
 
 				if (actualTblData.get(key) != null
 						&& !givenTableValue.get(key).equals(actualTblData.get(key).getText())) {
@@ -747,7 +900,237 @@ public class LibraryClass extends BaseClass {
 
 	}
 
-	
-	
-	
+	public String generateRandomString() {
+
+		StringBuffer randStr = new StringBuffer();
+		for (int i = 0; i < RANDOM_STRING_LENGTH; i++) {
+			int number = getRandomNumber();
+			char ch = CHAR_LIST.charAt(number);
+			randStr.append(ch);
+		}
+		return randStr.toString();
+	}
+
+	private int getRandomNumber() {
+		int randomInt = 0;
+		Random randomGenerator = new Random();
+		randomInt = randomGenerator.nextInt(CHAR_LIST.length());
+		if (randomInt - 1 == -1) {
+			return randomInt;
+		} else {
+			return randomInt - 1;
+		}
+	}
+
+	public boolean retryingFindClick(WebDriver driver, By by) {
+		boolean result = false;
+		int attempts = 0;
+		while (attempts < 2) {
+			try {
+				driver.findElement(by).click();
+				result = true;
+				break;
+			} catch (StaleElementReferenceException e) {
+			}
+			attempts++;
+		}
+		return result;
+	}
+
+	public void verifyValueingrid(WebDriver driver, int mintblcolum, WebElement gridID,
+			HashMap<Integer, String> givenTableValue, String msg, String parameterData) {
+
+		boolean matchFound = false;
+
+		waitForInVisibilityOfElement(driver, loadingImg);
+
+		WebElement table = gridID;
+		List<WebElement> tblRows = table.findElements(By.cssSelector(
+				"div[class='ui-grid-render-container ng-isolate-scope ui-grid-render-container-body'] div[class='ui-grid-row ng-scope']"));
+		int tblRowscount = tblRows.size();
+		/* System.out.println("row size " +tblRowscount); */
+
+		for (row = 0; row < tblRowscount; row++) {
+
+			List<WebElement> actualTblData = tblRows.get(row)
+					.findElements(By.cssSelector("div[class='ui-grid-cell-contents ng-binding ng-scope']"));
+
+			int tblDataCount = actualTblData.size();
+
+			if (tblDataCount <= mintblcolum) {
+				continue;
+			}
+			matchFound = true;
+			Set<Integer> keys = givenTableValue.keySet();
+			for (Integer key : keys) {
+
+				// System.out.println("TableValue of " + key + " is: " +
+				// actualTblData.get(key).getText());
+
+				givenValueInGrid = givenTableValue.get(key);
+
+				// System.out.println("Given of " + key + " is: " +
+				// givenValueInGrid);
+
+				if (actualTblData.get(key) != null
+						&& !givenTableValue.get(key).equals(actualTblData.get(key).getText())) {
+					matchFound = false;
+					break;
+				}
+			} // For Key Loop End
+
+			if (matchFound == true) {
+				Assert.assertTrue("The records have shown properly", matchFound);
+				noOfRow = row;
+				rownumber = tblRows.get(row);
+
+				columnNumber = actualTblData.get(0);
+				break;
+			}
+
+		} // Main For End
+		if (matchFound == false) {
+			givenTableValue.clear();
+			Assert.fail(msg + ": " + parameterData);
+			table.click();
+		}
+		givenTableValue.clear();
+
+	}
+
+	public void click(By element) {
+		boolean blSuccessFlag = true;
+		int loopCounter = 0;
+		do {
+			try {
+				driver.findElement(element).click();
+				System.out.println("Before element click" + element + loopCounter);
+				blSuccessFlag = false;
+			}
+			catch (Exception e) {
+				if (e.toString().contains("org.openqa.selenium.WebDriverException: unknown error:")
+						|| e.toString().contains("is not clickable at point")) {
+					blSuccessFlag = true;
+					loopCounter++;
+					System.out.println("After element click" + element + loopCounter);
+				}
+			}
+		} while (blSuccessFlag && loopCounter < 500);
+	}
+
+	public boolean verifyTextfromOpenedPDFFileInBrowser(String[] pdfSearchString) {
+		String[] reqTextInPDF = pdfSearchString;
+		PDFTextStripper pdfStripper = null;
+		PDDocument pdDoc = null;
+		COSDocument cosDoc = null;
+		String parsedText = null;
+		int i;
+		try {
+			flag = false;
+			Properties systemSettings = System.getProperties();
+			systemSettings.put("proxySet", "true");
+			systemSettings.put("https.proxyHost", "10.100.7.81");
+			systemSettings.put("https.proxyPort", "9443");
+			// URL url = new URL(driver.getCurrentUrl());
+			URL url = new URL("https", "10.100.7.81", 9443, "/nsure/letters/printpdf");
+			url.openConnection();
+			BufferedInputStream file = new BufferedInputStream(url.openStream(), 100);
+			PDFParser parser = new PDFParser(file);
+			parser.parse();
+			cosDoc = parser.getDocument();
+			pdfStripper = new PDFTextStripper();
+			pdfStripper.setStartPage(1);
+			pdfStripper.setEndPage(1);
+
+			pdDoc = new PDDocument(cosDoc);
+			parsedText = pdfStripper.getText(pdDoc);
+		} catch (MalformedURLException e2) {
+			System.err.println("URL string could not be parsed " + e2.getMessage());
+		} catch (IOException e) {
+			System.err.println("Unable to open PDF Parser. " + e.getMessage());
+			try {
+				if (cosDoc != null)
+					cosDoc.close();
+				if (pdDoc != null)
+					pdDoc.close();
+			} catch (Exception e1) {
+				e.printStackTrace();
+			}
+		}
+
+		/*
+		 * System.out.println("+++++++++++++++++");
+		 * System.out.println(parsedText);
+		 * System.out.println("+++++++++++++++++");
+		 */
+		for (i = 0; i < reqTextInPDF.length; i++) {
+			if (parsedText.contains(reqTextInPDF[i])) {
+				flag = true;
+			} else {
+				flag = false;
+				break;
+			}
+		}
+
+		if (flag == false) {
+			Assert.fail("Unable to find text in PDF document" + reqTextInPDF[i]);
+		}
+		return flag;
+
+	}
+
+	public boolean verifyTextfromSavedPDFFile(String[] pdfSearchString, String filePath) {
+		String[] reqTextInPDF = pdfSearchString;
+		PDFTextStripper pdfStripper = null;
+		PDDocument pdDoc = null;
+		COSDocument cosDoc = null;
+		String parsedText = null;
+		int i;
+		try {
+			flag = false;
+			File file = new File(filePath);
+			PDFParser parser = new PDFParser(new FileInputStream(file));
+			parser.parse();
+			cosDoc = parser.getDocument();
+			pdfStripper = new PDFTextStripper();
+			pdfStripper.setStartPage(1);
+			pdfStripper.setEndPage(1);
+
+			pdDoc = new PDDocument(cosDoc);
+			parsedText = pdfStripper.getText(pdDoc);
+		} catch (MalformedURLException e2) {
+			System.err.println("URL string could not be parsed " + e2.getMessage());
+		} catch (IOException e) {
+			System.err.println("Unable to open PDF Parser. " + e.getMessage());
+			try {
+				if (cosDoc != null)
+					cosDoc.close();
+				if (pdDoc != null)
+					pdDoc.close();
+			} catch (Exception e1) {
+				e.printStackTrace();
+			}
+		}
+
+		/*
+		 * System.out.println("+++++++++++++++++");
+		 * System.out.println(parsedText);
+		 * System.out.println("+++++++++++++++++");
+		 */
+		for (i = 0; i < reqTextInPDF.length; i++) {
+			if (parsedText.contains(reqTextInPDF[i])) {
+				flag = true;
+			} else {
+				flag = false;
+				break;
+			}
+		}
+
+		if (flag == false) {
+			Assert.fail("Unable to find text in PDF document" + reqTextInPDF[i]);
+		}
+		return flag;
+
+	}
+
 }
