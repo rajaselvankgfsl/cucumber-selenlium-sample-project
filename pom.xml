@@ -16,12 +16,12 @@
 		<dependency>
 			<groupId>com.kgisl.c2reports</groupId>
 			<artifactId>CustomeReportGenerator</artifactId>
-			<version>0.0.3</version>
+			<version>1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.kgisl.c2reports</groupId>
 			<artifactId>CustomeReportRunner</artifactId>
-			<version>0.0.3</version>
+			<version>1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.freemarker</groupId>
